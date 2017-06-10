@@ -38,9 +38,9 @@ def main(arguments):
     verbose = True if "verbose" in config else False
     if not input_path or not output_path or not handler:
         print_usage()
-    user_log_process = UserLogProcess(input_path=input_path, handler=handler, verbose=verbose)
-    user_log_process.start()
-    user_log_process.save_output(output_path=output_path)
+    user_log_process = UserLogProcess(handler=handler, verbose=verbose)
+    user_log_process.start(input_path=input_path)
+    user_log_process.save(output_path=output_path)
 
 
 if __name__ == '__main__':

@@ -1,95 +1,15 @@
-from random import randint
+from handler import MissingHandler
 from entity import UserStat
 import os
 
 
-class MissingHandler(object):
-
-    def __init__(self):
-        """
-        Contains two interface methods to be implemented to handle missing log entries.
-        """
-        pass
-
-    def handle_unpaired_open(self, open_time, log_end_time):
-        """
-        Handles the log entry whose status is "open" whereas there is no "close" time available to pair.
-
-        :param open_time: the time a of "open" log entry.
-        :param log_end_time: the last log entry time.
-        :return: a proper time to "close" this entry, i.e. the close time to pair this open time.
-        """
-        raise NotImplementedError("Need to implement handle_unpaired_open method.")
-
-    def handle_unpaired_close(self, close_time, log_start_time):
-        """
-        Handles the log entry whose status is "close" whereas there is no "open" time available to pair.
-
-        :param close_time: the time of a "close" log entry.
-        :param log_start_time: the first log entry time.
-        :return: a proper time to "open" this entry, i.e. the open time to pair this close time.
-        """
-        raise NotImplementedError("Need to implement handle_unpaired_close method.")
-
-    @staticmethod
-    def create_handler(handler):
-        """
-        A factory to create a corresponding handler for log entries that missing "pairable" log time.
-        :param handler: name/mode of the handler, by default "ignore" mode
-        :return: the specific implementation of a MissingHandler.
-        """
-        if handler == "random":
-            return RandomHandler()
-        elif handler == "average":
-            return AverageHandler()
-        return IgnoreHandler()
-
-
-class IgnoreHandler(MissingHandler):
-
-    def __init__(self):
-        MissingHandler.__init__(self)
-
-    def handle_unpaired_open(self, open_time, log_end_time):
-        return None
-
-    def handle_unpaired_close(self, close_time, log_start_time):
-        return None
-
-
-class RandomHandler(MissingHandler):
-
-    def __init__(self):
-        MissingHandler.__init__(self)
-
-    def handle_unpaired_open(self, open_time, log_end_time):
-        return RandomHandler.get_random_in_range(open_time+1, log_end_time)
-
-    def handle_unpaired_close(self, close_time, log_start_time):
-        return RandomHandler.get_random_in_range(log_start_time, close_time-1)
-
-    @staticmethod
-    def get_random_in_range(begin, end):
-        # Given a range [begin, end], randomly pick one inside the range
-        return randint(begin, end)
-
-
-class AverageHandler(MissingHandler):
-
-    def __init__(self):
-        MissingHandler.__init__(self)
-
-    def handle_unpaired_open(self, open_time, log_end_time):
-        return (open_time + log_end_time) / 2
-
-    def handle_unpaired_close(self, close_time, log_start_time):
-        return (close_time + log_start_time) / 2
-
-
 class UserLogProcess(object):
-    # a collection of user
-    def __init__(self, input_path, handler, verbose=False):
-        self.input_path = input_path
+    """
+    A class for the porcessing work.
+    Use a dictionary with user id as the key and user stat object as the value.
+    If verbose mode, will print all details during the work.
+    """
+    def __init__(self, handler, verbose=False):
         self.user_map = {}
         self.handler = MissingHandler.create_handler(handler=handler)
         self.log_latest_time = None
@@ -97,11 +17,25 @@ class UserLogProcess(object):
         self.verbose = verbose
 
     def get_user_stat(self, user_id):
+        """
+        Create the user stat object if it is not avaialbe yet.
+        :param user_id:
+        :return: The user stat object associated with the user_id.
+        """
         if user_id not in self.user_map:
             self.user_map[user_id] = UserStat(user_id=user_id)
         return self.user_map[user_id]
 
     def process_log_entry(self, entry):
+        """
+        Here is the core method to process each log entry line.
+        If the status is "open", simply add it to the user stat's open time queue.
+        If "close", get the open time to pair it.
+        If not pairable, needs to call the handler to handle it and get the proper "open" time for it.
+
+        :param entry:
+        :return:
+        """
         if entry:
             entry_list = entry.split("\n")[0].split(",")
             user_id = entry_list[0]
@@ -116,12 +50,17 @@ class UserLogProcess(object):
                 if user_stat.has_unpaired_open():
                     open_time = user_stat.pop_first_unpaired_open()
                 else:
-                    open_time = self.handler.handle_unpaired_close(user_stat, self.log_start_time)
+                    open_time = self.handler.handle_unpaired_close(self.log_latest_time, self.log_start_time)
                 if open_time:
                     user_stat.update_duration(open_time=open_time, close_time=self.log_latest_time)
 
-    def start(self):
-        with open(self.input_path, "r") as input_file:
+    def start(self, input_path):
+        """
+        Since the log file may be too large to fit in memory, it is processed line by line.
+        For each line, need to consider the unpaired "close" log entries.
+        After all lines, for each user, need to handle its "open" log entries that not paired yet, if any.
+        """
+        with open(input_path, "r") as input_file:
             for line in input_file:
                 self.process_log_entry(line)
         for user_stat in self.user_map.values():
@@ -131,7 +70,7 @@ class UserLogProcess(object):
                 if close_time:
                     user_stat.update_duration(open_time=unpaired_open_time, close_time=close_time)
 
-    def save_output(self, output_path):
+    def save(self, output_path):
         parent_dir = output_path[0:output_path.rfind("/")]
         if not os.path.exists(parent_dir):
             os.makedirs(parent_dir)
