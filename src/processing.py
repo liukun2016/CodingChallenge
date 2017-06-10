@@ -1,4 +1,4 @@
-from handler import MissingHandler
+from handler import MissingHandlerInterface
 from entity import UserStat
 import os
 
@@ -11,7 +11,7 @@ class UserLogProcess(object):
     """
     def __init__(self, handler, verbose=False):
         self.user_map = {}
-        self.handler = MissingHandler.create_handler(handler=handler)
+        self.handler = MissingHandlerInterface.create_handler(handler=handler)
         self.log_latest_time = None
         self.log_start_time = None
         self.verbose = verbose

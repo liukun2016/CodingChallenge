@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import sys
 from processing import UserLogProcess
 
@@ -15,9 +17,13 @@ def print_usage():
     s = """Program usage:
     Arguments format: --arg_name=arg_value
     Required arguments:
-        input_path: input path
-        output_path: output path
-        handler: the way to handle missing "close" or "open" log time entry, currently supported ways:
+        --verbose=<if specified with any value, print the output line by line>
+    
+        --input_path=<input path>
+        
+        --output_path=<output path>
+        
+        --handler=<the way to handle missing "close" or "open" log time entry>, currently supported ways
             ignore: default mode, ignore the missing close or open entry.
             random:
                 for close status: randomly pick a open log time before the close log time.

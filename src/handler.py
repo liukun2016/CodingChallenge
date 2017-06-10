@@ -1,7 +1,7 @@
 from random import randint
 
 
-class MissingHandler(object):
+class MissingHandlerInterface(object):
 
     def __init__(self):
         """
@@ -45,13 +45,13 @@ class MissingHandler(object):
         return IgnoreHandler()
 
 
-class IgnoreHandler(MissingHandler):
+class IgnoreHandler(MissingHandlerInterface):
 
     def __init__(self):
         """
         Default mode for handling missing "open" or "closr" log entries. Do nothing with handling.
         """
-        MissingHandler.__init__(self)
+        MissingHandlerInterface.__init__(self)
 
     def handle_unpaired_open(self, open_time, log_end_time):
         return None
@@ -60,10 +60,10 @@ class IgnoreHandler(MissingHandler):
         return None
 
 
-class RandomHandler(MissingHandler):
+class RandomHandler(MissingHandlerInterface):
 
     def __init__(self):
-        MissingHandler.__init__(self)
+        MissingHandlerInterface.__init__(self)
 
     def handle_unpaired_open(self, open_time, log_end_time):
         """
@@ -103,10 +103,10 @@ class RandomHandler(MissingHandler):
         return randint(begin, end) if begin <= end else None
 
 
-class AverageHandler(MissingHandler):
+class AverageHandler(MissingHandlerInterface):
 
     def __init__(self):
-        MissingHandler.__init__(self)
+        MissingHandlerInterface.__init__(self)
 
     def handle_unpaired_open(self, open_time, log_end_time):
         """
