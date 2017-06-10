@@ -13,16 +13,17 @@ class UserStat(object):
         self.user_id = user_id
         self.open_time_queue = deque([])
         self.duration = 0
-        self.pair_count = 0
+        self.duration_count = 0
 
     def get_time_spent(self):
-        if self.pair_count > 0:
-            return max(1, self.duration / self.pair_count)
+        if self.duration_count > 0:
+            return max(1, self.duration / self.duration_count)
         return 0
 
     def update_duration(self, open_time, close_time):
-        self.duration += close_time - open_time
-        self.pair_count += 1
+        if open_time < close_time:
+            self.duration += close_time - open_time
+            self.duration_count += 1
 
     def add_open_time(self, open_time):
         self.open_time_queue.append(int(open_time))

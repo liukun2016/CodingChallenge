@@ -51,10 +51,10 @@ class IgnoreHandler(MissingHandler):
         MissingHandler.__init__(self)
 
     def handle_unpaired_open(self, open_time, log_end_time):
-        return open_time
+        return None
 
     def handle_unpaired_close(self, close_time, log_start_time):
-        return close_time
+        return None
 
 
 class RandomHandler(MissingHandler):
@@ -103,12 +103,12 @@ class UserLogProcess(object):
 
     def process_log_entry(self, entry):
         if entry:
-            entry_list = entry.split(",")
+            entry_list = entry.split("\n")[0].split(",")
             user_id = entry_list[0]
             self.log_latest_time = int(entry_list[1])
             if self.log_start_time is None:
                 self.log_start_time = self.log_latest_time
-            status = entry_list[2].split("\n")[0]
+            status = entry_list[2]
             user_stat = self.get_user_stat(user_id)
             if status == "open":
                 user_stat.add_open_time(self.log_latest_time)
@@ -117,7 +117,8 @@ class UserLogProcess(object):
                     open_time = user_stat.pop_first_unpaired_open()
                 else:
                     open_time = self.handler.handle_unpaired_close(user_stat, self.log_start_time)
-                user_stat.update_duration(open_time=open_time, close_time=self.log_latest_time)
+                if open_time:
+                    user_stat.update_duration(open_time=open_time, close_time=self.log_latest_time)
 
     def start(self):
         with open(self.input_path, "r") as input_file:
@@ -127,7 +128,8 @@ class UserLogProcess(object):
             while user_stat.has_unpaired_open():
                 unpaired_open_time = user_stat.pop_first_unpaired_open()
                 close_time = self.handler.handle_unpaired_open(unpaired_open_time, self.log_latest_time)
-                user_stat.update_duration(open_time=unpaired_open_time, close_time=close_time)
+                if close_time:
+                    user_stat.update_duration(open_time=unpaired_open_time, close_time=close_time)
 
     def save_output(self, output_path):
         parent_dir = output_path[0:output_path.rfind("/")]
