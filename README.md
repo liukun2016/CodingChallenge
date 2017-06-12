@@ -1,5 +1,7 @@
 # Twitter Coding Challenge
 
+Source codes on Github: https://github.com/liukun2016/TwitterCodingChallenge
+
 ### How to run the program?
 
 ```
